@@ -8,6 +8,7 @@ import { initDatabase } from './db.js';
 import { logger } from './logger.js';
 import { cleanupOldUploads } from './media.js';
 import { runDecaySweep } from './memory.js';
+import { startInboxWatcher } from './inbox.js';
 import { initScheduler } from './scheduler.js';
 import { setTelegramConnected, setBotInfo } from './state.js';
 
@@ -68,6 +69,7 @@ async function main(): Promise<void> {
 
   if (ALLOWED_CHAT_ID) {
     initScheduler((text) => bot.api.sendMessage(ALLOWED_CHAT_ID, text, { parse_mode: 'HTML' }).then(() => {}));
+    startInboxWatcher((text) => bot.api.sendMessage(ALLOWED_CHAT_ID, text, { parse_mode: 'HTML' }).then(() => {}));
   }
 
   const shutdown = async () => {
