@@ -38,13 +38,13 @@ async function main(): Promise<void> {
     const bot = createBot()
 
     // Railway Healthcheck Server
-    const port = process.env.PORT || 8080
+    const port = parseInt(process.env.PORT || '8080', 10)
     const server = http.createServer((req, res) => {
         res.writeHead(200)
         res.end('ClaudeClaw is running!')
     })
-    server.listen(port, () => {
-        logger.info({ port }, 'Healthcheck server listening')
+    server.listen(port, '0.0.0.0', () => {
+        logger.info({ port }, 'Healthcheck server listening on 0.0.0.0')
     })
 
     const shutdown = async () => {
