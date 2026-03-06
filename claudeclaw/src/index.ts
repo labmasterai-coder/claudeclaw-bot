@@ -6,6 +6,17 @@ import { initDatabase } from './db.js'
 import { STORE_DIR, TELEGRAM_BOT_TOKEN } from './config.js'
 import { logger } from './logger.js'
 
+// -------- Railway Healthcheck Server (Start immediately) --------
+const port = parseInt(process.env.PORT || '8080', 10)
+const server = http.createServer((req, res) => {
+    res.writeHead(200)
+    res.end('ClaudeClaw is running!')
+})
+server.listen(port, '0.0.0.0', () => {
+    console.log(`[Healthcheck] Server listening on 0.0.0.0:${port}`)
+})
+// ----------------------------------------------------------------
+
 const PID_FILE = path.join(STORE_DIR, 'claudeclaw.pid')
 
 function acquireLock(): void {
@@ -28,24 +39,14 @@ function releaseLock(): void {
 
 async function main(): Promise<void> {
     if (!TELEGRAM_BOT_TOKEN) {
-        logger.error('TELEGRAM_BOT_TOKEN is not set. Exiting.')
-        process.exit(1)
+        logger.error('TELEGRAM_BOT_TOKEN is not set. Bot will NOT start, but server stays alive for Railway Healthcheck.')
+        return // Do NOT exit, keep HTTP server alive
     }
 
     acquireLock()
     initDatabase()
 
     const bot = createBot()
-
-    // Railway Healthcheck Server
-    const port = parseInt(process.env.PORT || '8080', 10)
-    const server = http.createServer((req, res) => {
-        res.writeHead(200)
-        res.end('ClaudeClaw is running!')
-    })
-    server.listen(port, '0.0.0.0', () => {
-        logger.info({ port }, 'Healthcheck server listening on 0.0.0.0')
-    })
 
     const shutdown = async () => {
         logger.info('Shutting down...')
@@ -63,6 +64,5 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-    logger.error({ err }, 'Fatal error')
-    process.exit(1)
+    logger.error({ err }, 'Fatal error during startup. Bot will NOT start, but server stays alive.')
 })
